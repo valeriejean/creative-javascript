@@ -8,11 +8,11 @@ function setup() {
   createCanvas(1440, 954);
   background(95, 65, 26);
 
-  var img = loadImage("klimt5.png");
+  img = loadImage("klimt5.png");
   b1 = color(0);
   b2 = color(152, 121, 67);
 
-  noLoop();
+  // noLoop();
 
   setGradient(0, 0, 1440/2, 954, b1, b2);
   setGradient(954/2, 0, 1440/2, 954, b2, b1);
@@ -43,6 +43,7 @@ function setup() {
   }
 
   // HALO
+  //changed from curveVertex because it is not implemented in p5 yet
   fill(color(253, 223, 125));
   beginShape();
   vertex(847, 1100);
