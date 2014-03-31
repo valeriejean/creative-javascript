@@ -183,3 +183,10 @@ function coatRects(color) {
   fill(color);
   rect(random(280, 700), random(180, height), random(5, 30), random(45, 70));
 }
+
+function mousePressed() {
+  var specklewh = random(1, 5);
+  fill(217, 195, 73);
+  stroke(217, 195, 73);
+  ellipse(mouseX, mouseY, specklewh, specklewh);
+}
