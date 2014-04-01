@@ -55,15 +55,8 @@ var constants = function (require) {
 var core = function (require, shim, constants) {
         'use strict';
         var constants = constants;
-        var p5 = function (node, sketch) {
-            var self = this;
-            this.startTime = new Date().getTime();
-            this.preload_count = 0;
-            this.isGlobal = false;
+        var p5 = function (sketch, node) {
             this.frameCount = 0;
-            this._frameRate = 0;
-            this._lastFrameTime = 0;
-            this._targetFrameRate = 60;
             this.focused = true;
             this.displayWidth = screen.width;
             this.displayHeight = screen.height;
@@ -80,10 +73,7 @@ var core = function (require, shim, constants) {
             this.touchX = 0;
             this.touchY = 0;
             this.pWriters = [];
-            this._textLeading = 15;
-            this._textFont = 'sans-serif';
-            this._textSize = 12;
-            this._textStyle = constants.NORMAL;
+            this._bezierDetail = 20;
             this._curveDetail = 20;
             this.curElement = null;
             this.matrices = [[
@@ -97,7 +87,6 @@ var core = function (require, shim, constants) {
             this.settings = {
                 loop: true,
                 fill: false,
-                startTime: 0,
                 updateInterval: 0,
                 rectMode: constants.CORNER,
                 imageMode: constants.CORNER,
@@ -106,9 +95,21 @@ var core = function (require, shim, constants) {
                 mousePressed: false,
                 angleMode: constants.RADIANS
             };
+            this._startTime = new Date().getTime();
+            this._userNode = node;
+            this._preloadCount = 0;
+            this._isGlobal = false;
+            this._frameRate = 0;
+            this._lastFrameTime = 0;
+            this._targetFrameRate = 60;
+            this._textLeading = 15;
+            this._textFont = 'sans-serif';
+            this._textSize = 12;
+            this._textStyle = constants.NORMAL;
+            this._curveDetail = 20;
             this.styles = [];
             if (!sketch) {
-                this.isGlobal = true;
+                this._isGlobal = true;
                 for (var method in p5.prototype) {
                     window[method] = p5.prototype[method].bind(this);
                 }
@@ -128,30 +129,32 @@ var core = function (require, shim, constants) {
             if (document.readyState === 'complete') {
                 this._start();
             } else {
-                window.addEventListener('load', self._start.bind(self), false);
+                window.addEventListener('load', this._start.bind(this), false);
             }
-        };
-        p5._init = function () {
-            new p5();
         };
         p5.prototype._start = function () {
             this.createCanvas(800, 600, true);
-            var preload = this.preload || window.preload;
-            var context = this.isGlobal ? window : this;
-            if (preload) {
+            if (this._userNode) {
+                if (typeof this._userNode === 'string') {
+                    this._userNode = document.getElementById(this._userNode);
+                }
+            }
+            var userPreload = this.preload || window.preload;
+            var context = this._isGlobal ? window : this;
+            if (userPreload) {
                 context.loadJSON = function (path) {
-                    return context.preloadFunc('loadJSON', path);
+                    return context._preload('loadJSON', path);
                 };
                 context.loadStrings = function (path) {
-                    return context.preloadFunc('loadStrings', path);
+                    return context._preload('loadStrings', path);
                 };
                 context.loadXML = function (path) {
-                    return context.preloadFunc('loadXML', path);
+                    return context._preload('loadXML', path);
                 };
                 context.loadImage = function (path) {
-                    return context.preloadFunc('loadImage', path);
+                    return context._preload('loadImage', path);
                 };
-                preload();
+                userPreload();
                 context.loadJSON = p5.prototype.loadJSON;
                 context.loadStrings = p5.prototype.loadStrings;
                 context.loadXML = p5.prototype.loadXML;
@@ -159,54 +162,49 @@ var core = function (require, shim, constants) {
             } else {
                 this._setup();
                 this._runFrames();
-                this._drawSketch();
+                this._draw();
             }
         };
-        p5.prototype.preloadFunc = function (func, path) {
-            var context = this.isGlobal ? window : this;
-            context._setProperty('preload_count', context.preload_count + 1);
+        p5.prototype._preload = function (func, path) {
+            var context = this._isGlobal ? window : this;
+            context._setProperty('preload-count', context._preloadCount + 1);
             return this[func](path, function (resp) {
-                context._setProperty('preload_count', context.preload_count - 1);
-                if (context.preload_count === 0) {
+                context._setProperty('preload-count', context._preloadCount - 1);
+                if (context._preloadCount === 0) {
                     context._setup();
                     context._runFrames();
-                    context._drawSketch();
+                    context._draw();
                 }
             });
         };
         p5.prototype._setup = function () {
-            var setup = this.setup || window.setup;
-            if (typeof setup === 'function') {
-                setup();
-            } else {
-                var context = this.isGlobal ? window : this;
-                context.createCanvas(600, 400, true);
+            var userSetup = this.setup || window.setup;
+            if (typeof userSetup === 'function') {
+                userSetup();
             }
         };
-        p5.prototype._drawSketch = function () {
-            var self = this;
+        p5.prototype._draw = function () {
             var now = new Date().getTime();
-            self._frameRate = 1000 / (now - self._lastFrameTime);
-            self._lastFrameTime = now;
-            var userDraw = self.draw || window.draw;
-            if (self.settings.loop) {
+            this._frameRate = 1000 / (now - this._lastFrameTime);
+            this._lastFrameTime = now;
+            var userDraw = this.draw || window.draw;
+            if (this.settings.loop) {
                 setTimeout(function () {
-                    window.requestDraw(self._drawSketch.bind(self));
-                }, 1000 / self._targetFrameRate);
+                    window.requestDraw(this._draw.bind(this));
+                }.bind(this), 1000 / this._targetFrameRate);
             }
             if (typeof userDraw === 'function') {
                 userDraw();
             }
-            self.curElement.context.setTransform(1, 0, 0, 1, 0, 0);
+            this.curElement.context.setTransform(1, 0, 0, 1, 0, 0);
         };
         p5.prototype._runFrames = function () {
-            var self = this;
             if (this.updateInterval) {
                 clearInterval(this.updateInterval);
             }
             this.updateInterval = setInterval(function () {
-                self._setProperty('frameCount', self.frameCount + 1);
-            }, 1000 / self._targetFrameRate);
+                this._setProperty('frameCount', this.frameCount + 1);
+            }.bind(this), 1000 / this._targetFrameRate);
         };
         p5.prototype._applyDefaults = function () {
             this.curElement.context.fillStyle = '#FFFFFF';
@@ -215,7 +213,7 @@ var core = function (require, shim, constants) {
         };
         p5.prototype._setProperty = function (prop, value) {
             this[prop] = value;
-            if (this.isGlobal) {
+            if (this._isGlobal) {
                 window[prop] = value;
             }
         };
@@ -383,48 +381,9 @@ var mathpvector = function (require) {
         };
         return PVector;
     }({});
-var mathcalculation = function (require, core) {
+var colorcreating_reading = function (require, core) {
         'use strict';
         var p5 = core;
-        p5.prototype.abs = Math.abs;
-        p5.prototype.ceil = Math.ceil;
-        p5.prototype.constrain = function (n, l, h) {
-            return this.max(this.min(n, h), l);
-        };
-        p5.prototype.dist = function (x1, y1, x2, y2) {
-            var xs = x2 - x1;
-            var ys = y2 - y1;
-            return Math.sqrt(xs * xs + ys * ys);
-        };
-        p5.prototype.exp = Math.exp;
-        p5.prototype.floor = Math.floor;
-        p5.prototype.lerp = function (start, stop, amt) {
-            return amt * (stop - start) + start;
-        };
-        p5.prototype.log = Math.log;
-        p5.prototype.mag = function (x, y) {
-            return Math.sqrt(x * x + y * y);
-        };
-        p5.prototype.map = function (n, start1, stop1, start2, stop2) {
-            return (n - start1) / (stop1 - start1) * (stop2 - start2) + start2;
-        };
-        p5.prototype.max = Math.max;
-        p5.prototype.min = Math.min;
-        p5.prototype.norm = function (n, start, stop) {
-            return this.map(n, start, stop, 0, 1);
-        };
-        p5.prototype.pow = Math.pow;
-        p5.prototype.round = Math.round;
-        p5.prototype.sq = function (n) {
-            return n * n;
-        };
-        p5.prototype.sqrt = Math.sqrt;
-        return p5;
-    }({}, core);
-var colorcreating_reading = function (require, core, mathcalculation) {
-        'use strict';
-        var p5 = core;
-        var calculation = mathcalculation;
         p5.prototype.alpha = function (rgb) {
             if (rgb.length > 3) {
                 return rgb[3];
@@ -466,7 +425,7 @@ var colorcreating_reading = function (require, core, mathcalculation) {
         p5.prototype.lerpColor = function (c1, c2, amt) {
             var c = [];
             for (var i = 0; i < c1.length; i++) {
-                c.push(calculation.lerp(c1[i], c2[i], amt));
+                c.push(p5.prototype.lerp(c1[i], c2[i], amt));
             }
             return c;
         };
@@ -485,7 +444,7 @@ var colorcreating_reading = function (require, core, mathcalculation) {
             }
         };
         return p5;
-    }({}, core, mathcalculation);
+    }({}, core);
 var colorsetting = function (require, core, constants) {
         'use strict';
         var p5 = core;
@@ -567,15 +526,26 @@ var dataarray_functions = function (require, core) {
             return array;
         };
         p5.prototype.arrayCopy = function (src, srcPosition, dst, dstPosition, length) {
+            var start, end;
             if (typeof length !== 'undefined') {
-                for (var i = srcPosition; i < Math.min(srcPosition + length, src.length); i++) {
-                    dst[dstPosition + i] = src[i];
-                }
-            } else if (typeof dst !== 'undefined') {
-                srcPosition = src.slice(0, Math.min(dst, src.length));
+                end = Math.min(length, src.length);
+                start = dstPosition;
+                src = src.slice(srcPosition, end + srcPosition);
             } else {
-                srcPosition = src.slice(0);
+                if (typeof dst !== 'undefined') {
+                    end = dst;
+                    end = Math.min(end, src.length);
+                } else {
+                    end = src.length;
+                }
+                start = 0;
+                dst = srcPosition;
+                src = src.slice(0, end);
             }
+            Array.prototype.splice.apply(dst, [
+                start,
+                end
+            ].concat(src));
         };
         p5.prototype.concat = function (list0, list1) {
             return list0.concat(list1);
@@ -600,13 +570,17 @@ var dataarray_functions = function (require, core) {
             return arr.concat(rest);
         };
         p5.prototype.splice = function (list, value, index) {
-            return list.splice(index, 0, value);
+            Array.prototype.splice.apply(list, [
+                index,
+                0
+            ].concat(value));
+            return list;
         };
         p5.prototype.subset = function (list, start, count) {
             if (typeof count !== 'undefined') {
                 return list.slice(start, start + count);
             } else {
-                return list.slice(start, list.length - 1);
+                return list.slice(start, list.length);
             }
         };
         return p5;
@@ -756,7 +730,7 @@ var inputmouse = function (require, core, constants) {
             }
         };
         p5.prototype.onmousemove = function (e) {
-            var context = this.isGlobal ? window : this;
+            var context = this._isGlobal ? window : this;
             this.updateMouseCoords(e);
             if (!this.isMousePressed() && typeof context.mouseMoved === 'function') {
                 context.mouseMoved(e);
@@ -766,7 +740,7 @@ var inputmouse = function (require, core, constants) {
             }
         };
         p5.prototype.onmousedown = function (e) {
-            var context = this.isGlobal ? window : this;
+            var context = this._isGlobal ? window : this;
             this.settings.mousePressed = true;
             this.setMouseButton(e);
             if (typeof context.mousePressed === 'function') {
@@ -774,20 +748,20 @@ var inputmouse = function (require, core, constants) {
             }
         };
         p5.prototype.onmouseup = function (e) {
-            var context = this.isGlobal ? window : this;
+            var context = this._isGlobal ? window : this;
             this.settings.mousePressed = false;
             if (typeof context.mouseReleased === 'function') {
                 context.mouseReleased(e);
             }
         };
         p5.prototype.onmouseclick = function (e) {
-            var context = this.isGlobal ? window : this;
+            var context = this._isGlobal ? window : this;
             if (typeof context.mouseClicked === 'function') {
                 context.mouseClicked(e);
             }
         };
         p5.prototype.onmousewheel = function (e) {
-            var context = this.isGlobal ? window : this;
+            var context = this._isGlobal ? window : this;
             if (typeof context.mouseWheel === 'function') {
                 context.mouseWheel(e);
             }
@@ -922,7 +896,7 @@ var dompelement = function (require, constants) {
 var dommanipulate = function (require, core, inputmouse, inputtouch, dompelement) {
         var p5 = core;
         var PElement = dompelement;
-        p5.prototype.createCanvas = function (w, h, isDefault, targetID) {
+        p5.prototype.createCanvas = function (w, h, isDefault) {
             var c = document.createElement('canvas');
             c.setAttribute('width', w);
             c.setAttribute('height', h);
@@ -934,12 +908,13 @@ var dommanipulate = function (require, core, inputmouse, inputtouch, dompelement
                 if (defaultCanvas) {
                     defaultCanvas.parentNode.removeChild(defaultCanvas);
                 }
-                if (targetID) {
-                    var target = document.getElementById(targetID);
-                    if (target) {
-                        target.appendChild(c);
+                if (this._userNode) {
+                    if (this._userNode.tagName === 'CANVAS') {
+                        c = this._userNode;
+                        c.setAttribute('width', w);
+                        c.setAttribute('height', h);
                     } else {
-                        document.body.appendChild(c);
+                        this._userNode.appendChild(c);
                     }
                 } else {
                     document.body.appendChild(c);
@@ -955,7 +930,6 @@ var dommanipulate = function (require, core, inputmouse, inputtouch, dompelement
             elt.innerHTML = html;
             document.body.appendChild(elt);
             var c = new PElement(elt, this);
-            this.context(c);
             return c;
         };
         p5.prototype.createHTMLImage = function (src, alt) {
@@ -966,7 +940,6 @@ var dommanipulate = function (require, core, inputmouse, inputtouch, dompelement
             }
             document.body.appendChild(elt);
             var c = new PElement(elt, this);
-            this.context(c);
             return c;
         };
         p5.prototype.find = function (e) {
@@ -1003,7 +976,7 @@ var dommanipulate = function (require, core, inputmouse, inputtouch, dompelement
                 this.curElement.onblur = function () {
                     this.focused = false;
                 };
-                if (!this.isGlobal) {
+                if (!this._isGlobal) {
                     this.curElement.context.canvas.onmousemove = this.onmousemove.bind(this);
                     this.curElement.context.canvas.onmousedown = this.onmousedown.bind(this);
                     this.curElement.context.canvas.onmouseup = this.onmouseup.bind(this);
@@ -2130,7 +2103,7 @@ var inputfiles = function (require, core, reqwest) {
             var self = this;
             self.temp = [];
             reqwest(path, function (resp) {
-                self.log(resp);
+                self.print(resp);
                 self.temp = resp;
                 ret[0] = resp;
                 if (typeof callback !== 'undefined') {
@@ -2193,7 +2166,7 @@ var inputtime_date = function (require, core) {
             return new Date().getMinutes();
         };
         p5.prototype.millis = function () {
-            return new Date().getTime() - this.startTime;
+            return new Date().getTime() - this._startTime;
         };
         p5.prototype.month = function () {
             return new Date().getMonth();
@@ -2204,6 +2177,44 @@ var inputtime_date = function (require, core) {
         p5.prototype.year = function () {
             return new Date().getFullYear();
         };
+        return p5;
+    }({}, core);
+var mathcalculation = function (require, core) {
+        'use strict';
+        var p5 = core;
+        p5.prototype.abs = Math.abs;
+        p5.prototype.ceil = Math.ceil;
+        p5.prototype.constrain = function (n, l, h) {
+            return this.max(this.min(n, h), l);
+        };
+        p5.prototype.dist = function (x1, y1, x2, y2) {
+            var xs = x2 - x1;
+            var ys = y2 - y1;
+            return Math.sqrt(xs * xs + ys * ys);
+        };
+        p5.prototype.exp = Math.exp;
+        p5.prototype.floor = Math.floor;
+        p5.prototype.lerp = function (start, stop, amt) {
+            return amt * (stop - start) + start;
+        };
+        p5.prototype.log = Math.log;
+        p5.prototype.mag = function (x, y) {
+            return Math.sqrt(x * x + y * y);
+        };
+        p5.prototype.map = function (n, start1, stop1, start2, stop2) {
+            return (n - start1) / (stop1 - start1) * (stop2 - start2) + start2;
+        };
+        p5.prototype.max = Math.max;
+        p5.prototype.min = Math.min;
+        p5.prototype.norm = function (n, start, stop) {
+            return this.map(n, start, stop, 0, 1);
+        };
+        p5.prototype.pow = Math.pow;
+        p5.prototype.round = Math.round;
+        p5.prototype.sq = function (n) {
+            return n * n;
+        };
+        p5.prototype.sqrt = Math.sqrt;
         return p5;
     }({}, core);
 var mathrandom = function (require, core) {
@@ -2356,24 +2367,32 @@ var mathtrigonometry = function (require, core, polargeometry, constants) {
         var p5 = core;
         var polarGeometry = polargeometry;
         var constants = constants;
-        p5.prototype.acos = Math.acos;
-        p5.prototype.asin = Math.asin;
-        p5.prototype.atan = Math.atan;
-        p5.prototype.atan2 = Math.atan2;
+        p5.prototype.acos = function (x) {
+            return Math.acos(this.radians(x));
+        };
+        p5.prototype.asin = function (x) {
+            return Math.asin(this.radians(x));
+        };
+        p5.prototype.atan = function (x) {
+            return Math.atan(this.radians(x));
+        };
+        p5.prototype.atan2 = function (x, y) {
+            return Math.atan2(this.radians(x), this.radians(y));
+        };
         p5.prototype.cos = function (x) {
             return Math.cos(this.radians(x));
-        };
-        p5.prototype.degrees = function (angle) {
-            return this.settings.angleMode === constants.DEGREES ? angle : polarGeometry.radiansToDegrees(angle);
-        };
-        p5.prototype.radians = function (angle) {
-            return this.settings.angleMode === constants.RADIANS ? angle : polarGeometry.degreesToRadians(angle);
         };
         p5.prototype.sin = function (x) {
             return Math.sin(this.radians(x));
         };
         p5.prototype.tan = function (x) {
             return Math.tan(this.radians(x));
+        };
+        p5.prototype.degrees = function (angle) {
+            return this.settings.angleMode === constants.DEGREES ? angle : polarGeometry.radiansToDegrees(angle);
+        };
+        p5.prototype.radians = function (angle) {
+            return this.settings.angleMode === constants.RADIANS ? angle : polarGeometry.degreesToRadians(angle);
         };
         p5.prototype.angleMode = function (mode) {
             if (mode === constants.DEGREES || mode === constants.RADIANS) {
@@ -2447,23 +2466,17 @@ var outputimage = function (require, core) {
         };
         return p5;
     }({}, core);
-var log = function (require, core) {
+var outputtext_area = function (require, core) {
         'use strict';
         var p5 = core;
-        p5.prototype.log = function () {
+        p5.prototype.print = function () {
             if (window.console && console.log) {
                 console.log.apply(console, arguments);
             }
         };
+        p5.prototype.println = p5.prototype.print;
         return p5;
     }({}, core);
-var outputtext_area = function (require, core, log) {
-        'use strict';
-        var p5 = core;
-        p5.prototype.print = p5.prototype.log;
-        p5.prototype.println = p5.prototype.log;
-        return p5;
-    }({}, core, log);
 var shape2d_primitives = function (require, core, canvas, constants) {
         'use strict';
         var p5 = core;
@@ -2616,15 +2629,26 @@ var shapecurves = function (require, core) {
         p5.prototype.bezier = function (x1, y1, x2, y2, x3, y3, x4, y4) {
             this.curElement.context.beginPath();
             this.curElement.context.moveTo(x1, y1);
-            this.curElement.context.bezierCurveTo(x2, y2, x3, y3, x4, y4);
+            for (var i = 0; i <= this._bezierDetail; i++) {
+                var t = i / parseFloat(this._bezierDetail);
+                var x = p5.prototype.bezierPoint(x1, x2, x3, x4, t);
+                var y = p5.prototype.bezierPoint(y1, y2, y3, y4, t);
+                this.curElement.context.lineTo(x, y);
+            }
             this.curElement.context.stroke();
             return this;
         };
-        p5.prototype.bezierDetail = function () {
+        p5.prototype.bezierDetail = function (d) {
+            this._setProperty('_bezierDetail', d);
+            return this;
         };
-        p5.prototype.bezierPoint = function () {
+        p5.prototype.bezierPoint = function (a, b, c, d, t) {
+            var adjustedT = 1 - t;
+            return Math.pow(adjustedT, 3) * a + 3 * Math.pow(adjustedT, 2) * t * b + 3 * adjustedT * Math.pow(t, 2) * c + Math.pow(t, 3) * d;
         };
-        p5.prototype.bezierTangent = function () {
+        p5.prototype.bezierTangent = function (a, b, c, d, t) {
+            var adjustedT = 1 - t;
+            return 3 * d * Math.pow(t, 2) - 3 * c * Math.pow(t, 2) + 6 * c * adjustedT * t - 6 * b * adjustedT * t + 3 * b * Math.pow(adjustedT, 2) - 3 * a * Math.pow(adjustedT, 2);
         };
         p5.prototype.curve = function (x1, y1, x2, y2, x3, y3, x4, y4) {
             this.curElement.context.moveTo(x1, y1);
@@ -2778,7 +2802,7 @@ var linearalgebra = function (require) {
             }
         };
     }({});
-var transform = function (require, core, linearalgebra, log) {
+var transform = function (require, core, linearalgebra, outputtext_area) {
         'use strict';
         var p5 = core;
         var linearAlgebra = linearalgebra;
@@ -2801,7 +2825,7 @@ var transform = function (require, core, linearalgebra, log) {
             return this;
         };
         p5.prototype.printMatrix = function () {
-            this.log(this.matrices[this.matrices.length - 1]);
+            this.print(this.matrices[this.matrices.length - 1]);
             return this;
         };
         p5.prototype.pushMatrix = function () {
@@ -2900,7 +2924,7 @@ var transform = function (require, core, linearalgebra, log) {
             return this;
         };
         return p5;
-    }({}, core, linearalgebra, log);
+    }({}, core, linearalgebra, outputtext_area);
 var typographyattributes = function (require, core, constants) {
         'use strict';
         var p5 = core;
@@ -2968,14 +2992,19 @@ var typographyloading_displaying = function (require, core) {
         };
         return p5;
     }({}, core);
-var src_p5 = function (require, core, mathpvector, colorcreating_reading, colorsetting, dataarray_functions, datastring_functions, dommanipulate, dompelement, environment, image, imageloading_displaying, inputfiles, inputkeyboard, inputmouse, inputtime_date, inputtouch, mathcalculation, mathrandom, mathnoise, mathtrigonometry, outputfiles, outputimage, outputtext_area, shape2d_primitives, shapeattributes, shapecurves, shapevertex, structure, transform, typographyattributes, typographyloading_displaying) {
+var src_app = function (require, core, mathpvector, colorcreating_reading, colorsetting, dataarray_functions, datastring_functions, dommanipulate, dompelement, environment, image, imageloading_displaying, inputfiles, inputkeyboard, inputmouse, inputtime_date, inputtouch, mathcalculation, mathrandom, mathnoise, mathtrigonometry, outputfiles, outputimage, outputtext_area, shape2d_primitives, shapeattributes, shapecurves, shapevertex, structure, transform, typographyattributes, typographyloading_displaying) {
         'use strict';
         var p5 = core;
         var PVector = mathpvector;
+        var _globalInit = function () {
+            if (window.setup && typeof window.setup === 'function' || window.draw && typeof window.draw === 'function') {
+                new p5();
+            }
+        };
         if (document.readyState === 'complete') {
-            p5._init();
+            _globalInit();
         } else {
-            window.addEventListener('load', p5._init, false);
+            window.addEventListener('load', _globalInit, false);
         }
         window.p5 = p5;
         window.PVector = PVector;

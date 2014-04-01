@@ -158,7 +158,7 @@ function setup() {
 }
 
 function draw() {
-  image(img, 0, 0, 1440, 954);
+  image(img, 0, 0);
 };
 
 function setGradient(x, y, w, h, c1, c2) {
@@ -166,8 +166,8 @@ function setGradient(x, y, w, h, c1, c2) {
 
   for (var i = x; i <= x+w; i++) {
     var inter = map(i, x, x+w, 0, 1);
-    // var c = lerpColor(c1, c2, inter);
-    // stroke(c);
+    var c = lerpColor(c1, c2, inter);
+    stroke(c);
     line(i, y, i, y+h);
   }
 }
