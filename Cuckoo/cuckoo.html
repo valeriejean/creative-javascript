@@ -7,7 +7,7 @@
 	<body>
 		 <script>
 			var two = new Two({fullscreen: true}).appendTo(document.body);
-
+			var pathpoint=0;
 			var path = two.makeCurve(100, 100, 
 				Math.random() * two.width, Math.random() * two.height,
 				Math.random() * two.width, Math.random() * two.height,
@@ -36,18 +36,19 @@
 			object.fill = '#FF8099';
 			object.stroke = 'none';
 
-			var pathpoint = 100/two.width;
-			path.getPointAt(pathpoint, object.translation);
-			object.translation.addSelf(path.translation);
+			// function moveObject(){
+			// var pathpoint = 0;
+			// for(var pathpoint = 0; pathpoint < 1; pathpoint += .0001){
+				path.getPointAt(pathpoint, object.translation);
+				object.translation.addSelf(path.translation);
+				// }
+			// }
 
-			two.bind('update', function(frameCount){
-				
-			object.rotation = frameCount / 120;	
-				// object.translation.x = rectx + offsetx;
-				// object.translation.y = recty + offsety;
-				// offsetx += (1, 2);
-				// offsety += Math.random();
-
+			two.bind('update', function(frameCount){		
+				object.rotation = frameCount / 120;
+				path.getPointAt(pathpoint, object.translation);
+				object.translation.addSelf(path.translation);
+				pathpoint += .001;
 			}).play();
 		</script> 
 	</body>
