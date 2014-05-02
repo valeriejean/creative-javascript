@@ -1,0 +1,54 @@
+<html>
+	<head>
+		<script language="javascript" type="text/javascript" src="two.js"></script>
+		<!-- <script language="javascript" type="text/javascript" src="cuckoo.js"></script> !-->
+	</head>
+
+	<body>
+		 <script>
+			var two = new Two({fullscreen: true}).appendTo(document.body);
+
+			var path = two.makeCurve(100, 100, 
+				Math.random() * two.width, Math.random() * two.height,
+				Math.random() * two.width, Math.random() * two.height,
+				Math.random() * two.width, Math.random() * two.height,
+				Math.random() * two.width, Math.random() * two.height,
+				Math.random() * two.width, Math.random() * two.height,
+				true
+				);
+
+			// var path2 = two.makeCurve(100, 100, 
+			// 	Math.random() * two.width, Math.random() * two.height,
+			// 	Math.random() * two.width, Math.random() * two.height,
+			// 	Math.random() * two.width, Math.random() * two.height,
+			// 	Math.random() * two.width, Math.random() * two.height,
+			// 	true
+			// 	);
+
+			path.noFill().linewidth = 5;
+			// path2.noFill().linewidth = 5;
+			path.stroke = 'red';
+			// path2.stroke = 'blue';
+			var rectx = 0; 
+			var recty = 0;
+			var offsetx = offsety = 0;
+			var object = two.makeRectangle(rectx, recty, 40, 40);
+			object.fill = '#FF8099';
+			object.stroke = 'none';
+
+			var pathpoint = 100/two.width;
+			path.getPointAt(pathpoint, object.translation);
+			object.translation.addSelf(path.translation);
+
+			two.bind('update', function(frameCount){
+				
+			object.rotation = frameCount / 120;	
+				// object.translation.x = rectx + offsetx;
+				// object.translation.y = recty + offsety;
+				// offsetx += (1, 2);
+				// offsety += Math.random();
+
+			}).play();
+		</script> 
+	</body>
+</html>
