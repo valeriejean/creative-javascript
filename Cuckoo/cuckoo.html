@@ -2,12 +2,19 @@
 	<head>
 		<script language="javascript" type="text/javascript" src="two.js"></script>
 		<!-- <script language="javascript" type="text/javascript" src="cuckoo.js"></script> !-->
+		<body background="wallpaper.jpg">
 	</head>
 
 	<body>
 		 <script>
 			var two = new Two({fullscreen: true}).appendTo(document.body);
 			var pathpoint=0;
+
+			var d = new Date();
+			var n = d.getHours();
+			var m = d.getMinutes();
+			console.log('hi! it is ' + n + ":" + m);
+
 			var path = two.makeCurve(100, 100, 
 				Math.random() * two.width, Math.random() * two.height,
 				Math.random() * two.width, Math.random() * two.height,
@@ -27,7 +34,7 @@
 
 			path.noFill().linewidth = 5;
 			// path2.noFill().linewidth = 5;
-			path.stroke = 'red';
+			path.stroke = 'none';
 			// path2.stroke = 'blue';
 			var rectx = 0; 
 			var recty = 0;
@@ -36,19 +43,15 @@
 			object.fill = '#FF8099';
 			object.stroke = 'none';
 
-			// function moveObject(){
-			// var pathpoint = 0;
-			// for(var pathpoint = 0; pathpoint < 1; pathpoint += .0001){
+			function moveObject(){
 				path.getPointAt(pathpoint, object.translation);
 				object.translation.addSelf(path.translation);
-				// }
-			// }
+				pathpoint += .0005;
+			}
 
-			two.bind('update', function(frameCount){		
-				object.rotation = frameCount / 120;
-				path.getPointAt(pathpoint, object.translation);
-				object.translation.addSelf(path.translation);
-				pathpoint += .001;
+			two.bind('update', function(frameCount){
+				object.rotation = frameCount / 120;		
+				moveObject();
 			}).play();
 		</script> 
 	</body>
