@@ -9,11 +9,8 @@
 		 <script>
 			var two = new Two({fullscreen: true}).appendTo(document.body);
 			var pathpoint=0;
-
-			var d = new Date();
-			var n = d.getHours();
-			var m = d.getMinutes();
-			console.log('hi! it is ' + n + ":" + m);
+			var timeToMove = false;
+			// console.log('hi! it is ' + n + ":" m);
 
 			var path = two.makeCurve(100, 100, 
 				Math.random() * two.width, Math.random() * two.height,
@@ -34,25 +31,64 @@
 
 			path.noFill().linewidth = 5;
 			// path2.noFill().linewidth = 5;
-			path.stroke = 'none';
+			path.stroke = 'red';
 			// path2.stroke = 'blue';
+
 			var rectx = 0; 
 			var recty = 0;
-			var offsetx = offsety = 0;
 			var object = two.makeRectangle(rectx, recty, 40, 40);
 			object.fill = '#FF8099';
 			object.stroke = 'none';
 
 			function moveObject(){
-				path.getPointAt(pathpoint, object.translation);
-				object.translation.addSelf(path.translation);
-				pathpoint += .0005;
+				console.log("inside moveobject");
+				// for (var i = 0; i <=1 ; i+= .0005){
+				if (pathpoint < 1){	
+console.log("pathpoint is less than 1");
+					path.getPointAt(pathpoint, object.translation);
+					object.translation.addSelf(path.translation);
+				}
+				if (pathpoint == 0){
+					console.log("pathpoint is not less than 1");
+					// object.translation.set(0, 0);
+				}
+				// pathpoint += .0005;
+				// }
+			}
+
+			function checkTime(){
+				var d = new Date();
+				var seconds = d.getSeconds();
+				console.log(seconds);
+				// moveObject();
+				if (seconds % 7 == 0){
+					timeToMove = true;
+					// moveObject();
+					// pathpoint += .0005;
+				}
+				else {
+					// timeToMove = false;
+				}
 			}
 
 			two.bind('update', function(frameCount){
-				object.rotation = frameCount / 120;		
-				moveObject();
+				object.rotation = frameCount / 120;	
+				checkTime();
+				if (timeToMove === true){	
+					moveObject();
+					pathpoint += .002;
+						if (pathpoint > 1){
+							pathpoint = 0;
+							object.translation.set(0,0);
+							timeToMove = false;
+							 
+						}
+				// console.log(object.translation);
+					// timeToMove = false;
+				}
+
 			}).play();
+
 		</script> 
 	</body>
 </html>
