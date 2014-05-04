@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<script language="javascript" type="text/javascript" src="two.js"></script>
-		<!-- <script language="javascript" type="text/javascript" src="cuckoo.js"></script> !-->
+		<script language="javascript" type="text/javascript" src="buzz.js"></script>
 		<body background="wallpaper.jpg">
 	</head>
 
@@ -9,83 +9,172 @@
 		 <script>
 			var two = new Two({fullscreen: true}).appendTo(document.body);
 			var pathpoint=0;
+			var hour;
+			var correctedHour;
+			var previousCorrectedHour = -1;
+			var paths = [];
+			var hourPath;
+			var hourObjects = [];
+			var minuteObject;
+			var hourObjectsGroup = two.makeGroup();
 			var timeToMove = false;
-			// console.log('hi! it is ' + n + ":" m);
 
-			var path = two.makeCurve(100, 100, 
-				Math.random() * two.width, Math.random() * two.height,
-				Math.random() * two.width, Math.random() * two.height,
-				Math.random() * two.width, Math.random() * two.height,
-				Math.random() * two.width, Math.random() * two.height,
-				Math.random() * two.width, Math.random() * two.height,
-				true
-				);
+			var loopCounter = 0;
 
-			// var path2 = two.makeCurve(100, 100, 
-			// 	Math.random() * two.width, Math.random() * two.height,
-			// 	Math.random() * two.width, Math.random() * two.height,
-			// 	Math.random() * two.width, Math.random() * two.height,
-			// 	Math.random() * two.width, Math.random() * two.height,
-			// 	true
-			// 	);
+			function playToto(){
+				// var toto = new buzz.sound('/Audio/toto2.wav').bind('ended', function(){
+				// 	loopCounter++;
+				// 	if (loopCounter < correctedHour){
+				// 		this.play();
+				// 	} else {
+				// 	loopCounter = 0;
+				// 	}
+				// }).play();
+			}
 
-			path.noFill().linewidth = 5;
+
+			function makePaths(currentHour){
+				for (var i = 0; i < currentHour; i++){
+					hourPath = two.makeCurve(100, 100, 
+						Math.random() * two.width, Math.random() * two.height,
+						Math.random() * two.width, Math.random() * two.height,
+						Math.random() * two.width, Math.random() * two.height,
+						Math.random() * two.width, Math.random() * two.height,
+						Math.random() * two.width, Math.random() * two.height,
+						true
+						);
+
+					hourPath.stroke = 'none';
+					hourPath.noFill().linewidth = .3;
+					paths.push(hourPath);
+					console.log(paths.length + ' number of paths');
+				}
+				console.log(paths.length + ' number of paths 2');				
+				// makeHourObjects(correctedHour);	
+			}
+
+			function makeMinutes(currentMinutes){
+				var minutePath = two.makeCurve(100, 100, 
+					Math.random() * two.width, Math.random() * two.height,
+					Math.random() * two.width, Math.random() * two.height,
+					Math.random() * two.width, Math.random() * two.height,
+					Math.random() * two.width, Math.random() * two.height,
+					true
+					);
+
+				minuteObject = two.makeRectangle(0, 0, currentMinutes, currentMinutes);
+				minuteObject.fill = '#FF8099';
+				minuteObject.stroke = 'none';
+
+			}
+
+			// path.noFill().linewidth = 5;
 			// path2.noFill().linewidth = 5;
-			path.stroke = 'red';
+			// path.stroke = 'red';
 			// path2.stroke = 'blue';
 
-			var rectx = 0; 
-			var recty = 0;
-			var object = two.makeRectangle(rectx, recty, 40, 40);
-			object.fill = '#FF8099';
-			object.stroke = 'none';
+			function makeHourObjects(hours){
+				console.log('making hour objects');
+				playToto();
+				// if (toto.isEnded()){
+					// this.play();
+				// }
+				for (var i = 0; i < hours; i++){
+					// console.log('triggering toto');
+					// var toto = new buzz.sound('/Audio/toto.wav');
+					// toto.play();
+					// console.log('making rectangle');
+					// playToto();
+					var object = two.makeRectangle(0, 0, 20, 20);
+					object.fill = '#FF8099';
+					object.stroke = 'none';
+					hourObjects.push(object);
+					hourObjectsGroup.add(object);
+				}
+			}
 
 			function moveObject(){
-				console.log("inside moveobject");
-				// for (var i = 0; i <=1 ; i+= .0005){
-				if (pathpoint < 1){	
-console.log("pathpoint is less than 1");
-					path.getPointAt(pathpoint, object.translation);
-					object.translation.addSelf(path.translation);
-				}
-				if (pathpoint == 0){
-					console.log("pathpoint is not less than 1");
-					// object.translation.set(0, 0);
-				}
-				// pathpoint += .0005;
+				// console.log("inside moveobject");
+				// toto.play();
+				// if ( toto.isEnded() ){
+				// for(var j = 0; j < 3; j++){
+				// var totoGroup = new buzz.group([toto, toto, toto]);
+				// totoGroup.push(toto.wav);
+					// toto.play();
+					// toto.loop();
 				// }
+
+				console.log(hourObjects.length + "number of objects");
+				console.log(paths.length + ' number of paths 3');
+				if (pathpoint < 1){
+					for (var i = 0; i < hourObjects.length; i++){
+							paths[i].getPointAt(pathpoint, hourObjects[i].translation);
+							hourObjects[i].translation.addSelf(paths[i].translation);
+					}
+				}
 			}
 
 			function checkTime(){
 				var d = new Date();
 				var seconds = d.getSeconds();
-				console.log(seconds);
-				// moveObject();
-				if (seconds % 7 == 0){
-					timeToMove = true;
-					// moveObject();
-					// pathpoint += .0005;
+				hour = d.getMinutes();
+
+				if (hour > 12) {
+					correctedHour = (hour - 12);
+				} else {
+					correctedHour = hour;
 				}
-				else {
-					// timeToMove = false;
+				console.log(correctedHour + 'is the corrected hour');
+
+				if (correctedHour !== previousCorrectedHour){
+					console.log('clearing paths array');
+					paths = [];
+					console.log('clearing objects array');
+					hourObjects = [];
+
+					console.log('corrected hour != previousCorrectedHour');
+					console.log(correctedHour + "o'clock");
+					makePaths(correctedHour);
+					makeHourObjects(correctedHour);	
+					timeToMove = true;
+					previousCorrectedHour = correctedHour;
 				}
 			}
 
 			two.bind('update', function(frameCount){
-				object.rotation = frameCount / 120;	
+				// hourObjectsGroup.translation.set(two.width/2, two.height/2);
+				// hourObjectsGroup.rotation = frameCount / 120;	
+				
 				checkTime();
+
 				if (timeToMove === true){	
+					// toto.play();
+					// if (toto.isEnded()){
+						// for(var j = 0; j < 3; j++){
+							// if(toto.isEnded()){
+								// console.log('triggering toto');
+								// toto.play();
+							// }
+						// }
+					// }
+
 					moveObject();
-					pathpoint += .002;
-						if (pathpoint > 1){
-							pathpoint = 0;
-							object.translation.set(0,0);
-							timeToMove = false;
-							 
+					console.log('moving object now');
+					
+					pathpoint += .001;
+					console.log(pathpoint + " is pathpoint");
+
+					if (pathpoint >= 1){
+						console.log('pathpoint is greater than 1');
+						for(var i = 0; i < hourObjects.length; i++){
+							hourObjects[i].translation.set(-100, -100);
 						}
-				// console.log(object.translation);
-					// timeToMove = false;
-				}
+
+						pathpoint = 0;
+						timeToMove = false;
+
+					}
+				}	
 
 			}).play();
 
