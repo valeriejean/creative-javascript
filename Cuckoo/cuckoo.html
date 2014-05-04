@@ -16,15 +16,27 @@
 			var hourPath;
 			var hourObjects = [];
 			var minuteObject;
-			var hourObjectsGroup = two.makeGroup();
+			// var hourObjectsGroup = two.makeGroup();
 			var timeToMove = false;
+			var doorX = 200;
 
 			var loopCounter = 0;
 
+			// - - - - - drawings - - - - - 
+			var doorHole = two.makeRectangle(200, 200, 60, 70);
+			doorHole.fill = 'black';
+			doorHole.noStroke();
+
+			var door = two.makeRectangle(doorX, 200, 60, 70);
+			door.fill = '#b7c8a8';
+			door.stroke = '#a1ad95';
+			door.linewidth = 4;
+
+			// - - - - - actions - - - - - 
 			function playToto(){
 				// var toto = new buzz.sound('/Audio/toto2.wav').bind('ended', function(){
 				// 	loopCounter++;
-				// 	if (loopCounter < correctedHour){
+				// 	if (loopCounter < 4){
 				// 		this.play();
 				// 	} else {
 				// 	loopCounter = 0;
@@ -32,10 +44,9 @@
 				// }).play();
 			}
 
-
 			function makePaths(currentHour){
 				for (var i = 0; i < currentHour; i++){
-					hourPath = two.makeCurve(100, 100, 
+					hourPath = two.makeCurve(200, 200, 
 						Math.random() * two.width, Math.random() * two.height,
 						Math.random() * two.width, Math.random() * two.height,
 						Math.random() * two.width, Math.random() * two.height,
@@ -44,7 +55,7 @@
 						true
 						);
 
-					hourPath.stroke = 'none';
+					hourPath.stroke = 'red';
 					hourPath.noFill().linewidth = .3;
 					paths.push(hourPath);
 					console.log(paths.length + ' number of paths');
@@ -54,7 +65,7 @@
 			}
 
 			function makeMinutes(currentMinutes){
-				var minutePath = two.makeCurve(100, 100, 
+				var minutePath = two.makeCurve(200, 200, 
 					Math.random() * two.width, Math.random() * two.height,
 					Math.random() * two.width, Math.random() * two.height,
 					Math.random() * two.width, Math.random() * two.height,
@@ -68,42 +79,19 @@
 
 			}
 
-			// path.noFill().linewidth = 5;
-			// path2.noFill().linewidth = 5;
-			// path.stroke = 'red';
-			// path2.stroke = 'blue';
-
 			function makeHourObjects(hours){
 				console.log('making hour objects');
 				playToto();
-				// if (toto.isEnded()){
-					// this.play();
-				// }
 				for (var i = 0; i < hours; i++){
-					// console.log('triggering toto');
-					// var toto = new buzz.sound('/Audio/toto.wav');
-					// toto.play();
-					// console.log('making rectangle');
-					// playToto();
-					var object = two.makeRectangle(0, 0, 20, 20);
+					var object = two.makeRectangle(0, 0, 40, 40);
 					object.fill = '#FF8099';
 					object.stroke = 'none';
 					hourObjects.push(object);
-					hourObjectsGroup.add(object);
+					// hourObjectsGroup.add(object);
 				}
 			}
 
 			function moveObject(){
-				// console.log("inside moveobject");
-				// toto.play();
-				// if ( toto.isEnded() ){
-				// for(var j = 0; j < 3; j++){
-				// var totoGroup = new buzz.group([toto, toto, toto]);
-				// totoGroup.push(toto.wav);
-					// toto.play();
-					// toto.loop();
-				// }
-
 				console.log(hourObjects.length + "number of objects");
 				console.log(paths.length + ' number of paths 3');
 				if (pathpoint < 1){
@@ -143,25 +131,15 @@
 
 			two.bind('update', function(frameCount){
 				// hourObjectsGroup.translation.set(two.width/2, two.height/2);
-				// hourObjectsGroup.rotation = frameCount / 120;	
-				
+				// hourObjectsGroup.rotation = frameCount / 120;
 				checkTime();
 
 				if (timeToMove === true){	
-					// toto.play();
-					// if (toto.isEnded()){
-						// for(var j = 0; j < 3; j++){
-							// if(toto.isEnded()){
-								// console.log('triggering toto');
-								// toto.play();
-							// }
-						// }
-					// }
-
+					door.translation.set(140, 200);
 					moveObject();
 					console.log('moving object now');
 					
-					pathpoint += .001;
+					pathpoint += .003;
 					console.log(pathpoint + " is pathpoint");
 
 					if (pathpoint >= 1){
@@ -170,6 +148,7 @@
 							hourObjects[i].translation.set(-100, -100);
 						}
 
+						door.translation.set(200, 200);
 						pathpoint = 0;
 						timeToMove = false;
 
