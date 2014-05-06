@@ -2,41 +2,90 @@
 	<head>
 		<script language="javascript" type="text/javascript" src="two.js"></script>
 		<script language="javascript" type="text/javascript" src="buzz.js"></script>
+		<link rel="stylesheet" type="text/css" href="style.css">
 		<body background="wallpaper.jpg">
 	</head>
 
 	<body>
-		 <script>
+
+		<img src="clockpng3.png" id="clock">
+
+		<script>
 			var two = new Two({fullscreen: true}).appendTo(document.body);
 			var pathpoint=0;
-			var hour;
-			var correctedHour;
-			var previousCorrectedHour = -1;
+			var pPathpoint = 0;
 			var paths = [];
 			var hourPath;
 			var hourObjects = [];
-			var minuteObject;
-			// var hourObjectsGroup = two.makeGroup();
-			var timeToMove = false;
-			var doorX = 200;
+			// var pGroup = two.makeGroup();
+			var pathsGroup = two.makeGroup();
+			// var minuteObject;
 
+			var hour;
+			var correctedHour;
+			var previousCorrectedHour = -1;
+			var realHour;
+
+			var timeToMove = false;
+			var seconds = 0;
+			var tick = false;
+			// var lastSecond;
+			var posneg = 1;
+			// var tickLoop = 0;
 			var loopCounter = 0;
+			var doorX = 200;
+			var drawingY = 230;
+			var doorHeight = 45;
+			var doorWidth = 45;
+
 
 			// - - - - - drawings - - - - - 
-			var doorHole = two.makeRectangle(200, 200, 60, 70);
+			var doorHole = two.makeRectangle(doorX, drawingY, doorWidth, doorHeight);
 			doorHole.fill = 'black';
 			doorHole.noStroke();
 
-			var door = two.makeRectangle(doorX, 200, 60, 70);
+			var door = two.makeRectangle(doorX, drawingY, doorWidth, doorHeight);
 			door.fill = '#b7c8a8';
 			door.stroke = '#a1ad95';
 			door.linewidth = 4;
+
+			var bufferX = 50;
+			var curveY = 500;
+			var curve = two.makeCurve(doorX/2, curveY, 
+				doorX - bufferX, curveY + 15, 
+				doorX, curveY + 20, 
+				doorX + bufferX, curveY + 15, 
+				doorX + 2*bufferX, curveY, 
+				doorX + 2*bufferX, curveY, 
+				doorX + bufferX, curveY + 15, 
+				doorX, curveY + 20, 
+				doorX - bufferX, curveY + 15, 
+				doorX/2, curveY, 
+				true);
+			curve.noFill().stroke = 'white';
+			curve.linewidth = 3;
+			// pGroup.add(curve);
+
+			var pendulum = two.makeCircle(doorX/2, curveY, 30, 30);
+			pendulum.fill = '#b7c8a8';
+			pendulum.stroke = '#a1ad95';
+			pendulum.linewidth = 4;
+			// pGroup.add(pendulum);
+			// pGroup.translation.set = (100,0);
+
+
+			function swing(){
+				curve.getPointAt(pPathpoint, pendulum.translation);
+				pendulum.translation.addSelf(curve.translation);
+			}
+
 
 			// - - - - - actions - - - - - 
 			function playToto(){
 				// var toto = new buzz.sound('/Audio/toto2.wav').bind('ended', function(){
 				// 	loopCounter++;
-				// 	if (loopCounter < 4){
+
+				// 	if (loopCounter < realHour){
 				// 		this.play();
 				// 	} else {
 				// 	loopCounter = 0;
@@ -46,18 +95,19 @@
 
 			function makePaths(currentHour){
 				for (var i = 0; i < currentHour; i++){
-					hourPath = two.makeCurve(200, 200, 
+					hourPath = two.makeCurve(doorX, drawingY, 
 						Math.random() * two.width, Math.random() * two.height,
 						Math.random() * two.width, Math.random() * two.height,
 						Math.random() * two.width, Math.random() * two.height,
 						Math.random() * two.width, Math.random() * two.height,
-						Math.random() * two.width, Math.random() * two.height,
+						doorX, drawingY,
 						true
 						);
 
-					hourPath.stroke = 'red';
-					hourPath.noFill().linewidth = .3;
+					hourPath.stroke = 'none';
+					hourPath.noFill().linewidth = .4;
 					paths.push(hourPath);
+					pathsGroup.add(hourPath);
 					console.log(paths.length + ' number of paths');
 				}
 				console.log(paths.length + ' number of paths 2');				
@@ -65,7 +115,7 @@
 			}
 
 			function makeMinutes(currentMinutes){
-				var minutePath = two.makeCurve(200, 200, 
+				var minutePath = two.makeCurve(200, drawingY, 
 					Math.random() * two.width, Math.random() * two.height,
 					Math.random() * two.width, Math.random() * two.height,
 					Math.random() * two.width, Math.random() * two.height,
@@ -83,9 +133,11 @@
 				console.log('making hour objects');
 				playToto();
 				for (var i = 0; i < hours; i++){
-					var object = two.makeRectangle(0, 0, 40, 40);
+					var object = two.makeRectangle(0, 0, 20, 20);
+					// var object = two.makeCircle(0, 0, 10);
 					object.fill = '#FF8099';
 					object.stroke = 'none';
+					object.rotation = Math.PI / (Math.random()*3);
 					hourObjects.push(object);
 					// hourObjectsGroup.add(object);
 				}
@@ -93,7 +145,6 @@
 
 			function moveObject(){
 				console.log(hourObjects.length + "number of objects");
-				console.log(paths.length + ' number of paths 3');
 				if (pathpoint < 1){
 					for (var i = 0; i < hourObjects.length; i++){
 							paths[i].getPointAt(pathpoint, hourObjects[i].translation);
@@ -104,11 +155,12 @@
 
 			function checkTime(){
 				var d = new Date();
-				var seconds = d.getSeconds();
+				seconds = d.getSeconds();
 				hour = d.getMinutes();
 
 				if (hour > 12) {
-					correctedHour = (hour - 12);
+					// correctedHour = (hour - 12);
+					correctedHour = hour;
 				} else {
 					correctedHour = hour;
 				}
@@ -127,17 +179,41 @@
 					timeToMove = true;
 					previousCorrectedHour = correctedHour;
 				}
+
 			}
 
 			two.bind('update', function(frameCount){
-				// hourObjectsGroup.translation.set(two.width/2, two.height/2);
-				// hourObjectsGroup.rotation = frameCount / 120;
 				checkTime();
 
+				var pDate = new Date();
+				var pMs = pDate.getMilliseconds();
+				console.log(pMs);
+				pPathpoint = (posneg * pMs / 1000);
+				
+				// if (tick == true){
+				// 	console.log(pPathpoint + 'is pPathpoint');
+					
+					// if (frameCount % 8 == 0){
+					// if (tickLoop >= 999){
+					// 	posneg = posneg*(-1);
+					// 	tickLoop = 0;
+					// }
+					console.log(posneg + ' is the posneg');
+					console.log(pPathpoint + 'is pendulum pos');
+					// pPathpoint += posneg*.3;
+					swing();
+					// tickLoop++;
+				// 	tick = false;
+				// }
+
+				// pGroup.rotation = rotationRate* frameCount;
+
 				if (timeToMove === true){	
-					door.translation.set(140, 200);
+					door.translation.set(doorX - doorWidth, drawingY);
+					pathsGroup.stroke = 'red';
+					pathsGroup.noFill().opacity = (pathpoint);
 					moveObject();
-					console.log('moving object now');
+					console.log(paths.length + ' number of paths');
 					
 					pathpoint += .003;
 					console.log(pathpoint + " is pathpoint");
@@ -146,9 +222,11 @@
 						console.log('pathpoint is greater than 1');
 						for(var i = 0; i < hourObjects.length; i++){
 							hourObjects[i].translation.set(-100, -100);
+							paths[i].translation.set(-1000, -1000);
 						}
 
-						door.translation.set(200, 200);
+						door.translation.set(doorX, drawingY);
+						pathsGroup.stroke = 'none';
 						pathpoint = 0;
 						timeToMove = false;
 
