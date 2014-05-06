@@ -81,16 +81,16 @@
 
 
 			// - - - - - actions - - - - - 
-			function playToto(){
-				// var toto = new buzz.sound('/Audio/toto2.wav').bind('ended', function(){
-				// 	loopCounter++;
-
-				// 	if (loopCounter < realHour){
-				// 		this.play();
-				// 	} else {
-				// 	loopCounter = 0;
-				// 	}
-				// }).play();
+			function playToto(realHour){
+				var toto = new buzz.sound('/Audio/toto2.wav').bind('ended', function(){
+					loopCounter++;
+					console.log(realHour + ' is the real hour');
+					if (loopCounter < realHour){
+						this.play();
+					} else {
+					loopCounter = 0;
+					}
+				}).play();
 			}
 
 			function makePaths(currentHour){
@@ -131,7 +131,13 @@
 
 			function makeHourObjects(hours){
 				console.log('making hour objects');
-				playToto();
+
+				var totoDate = new Date();
+				// realHour = totoDate.getHours();
+				realHour = 3;
+				console.log(realHour + ' is the real hour 1');
+				playToto(realHour);
+
 				for (var i = 0; i < hours; i++){
 					var object = two.makeRectangle(0, 0, 20, 20);
 					// var object = two.makeCircle(0, 0, 10);
@@ -157,6 +163,8 @@
 				var d = new Date();
 				seconds = d.getSeconds();
 				hour = d.getMinutes();
+				
+
 
 				if (hour > 12) {
 					// correctedHour = (hour - 12);
